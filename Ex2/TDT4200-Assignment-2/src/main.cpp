@@ -12,7 +12,6 @@ int main(int argc, char **argv) {
 	unsigned int width = 1920;
 	unsigned int height = 1080;
 	unsigned int depth = 3;
-    int scale;
 
     int comm_sz; // size of the communicator
     int my_rank; // rank of the individual process
@@ -39,19 +38,19 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
-	std::string my_rank_string = std::to_string(my_rank);
-    output = "output/file_nb_" + my_rank_string +".png";
+
+    output = "output/file_nb_" + std::to_string(my_rank) + ".png";
+	int scale = 1;
 	if(my_rank == 0) {
 		for(int i = 1; i < comm_sz; ++i) {
-			scale = i+1; // just declare something different for all processess
+			int scale_to_send = i+1; // just declare something different for all processess
 			MPI_Send(
-					&scale, // pointer to stored data
+					&scale_to_send, // pointer to stored data
 					1, // packet size
 					MPI_INT, // packet type
 					i, // receiver
 					0, // tag
-					MPI_Comm MPI_COMM_WORLD);
-            // communicator
+					MPI_Comm MPI_COMM_WORLD); // communicator
 		}
 	}
 	else {
@@ -65,16 +64,11 @@ int main(int argc, char **argv) {
 				MPI_STATUS_IGNORE);
 	}
 
-
-
 	std::cout << "Loading '" << input << "' file... " << std::endl;
-
 	std::vector<Mesh> meshs = loadWavefront(input, false);
-
 	std::vector<unsigned char> frameBuffer = rasterise(meshs, scale*width, scale*height, depth);
 
 	std::cout << "Writing image to '" << output << "'..." << std::endl;
-
 	unsigned error = lodepng::encode(output, frameBuffer, width, height);
 
 	if(error)
