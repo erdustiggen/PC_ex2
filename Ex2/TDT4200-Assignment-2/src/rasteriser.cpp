@@ -4,6 +4,13 @@
 #include <iomanip>
 #include <chrono>
 #include <limits>
+#include <mpi.h>
+
+struct fnCall {
+	float3 fn_offset;
+	float fn_scale;
+	int fn_depth;
+};
 
 const std::vector<globalLight> lightSources = { {{0.3f, 0.5f, 1.0f}, {1.0f, 1.0f, 1.0f}} };
 
@@ -183,6 +190,21 @@ void renderMeshFractal(
 				float3 displacedOffset(
 					distanceOffset + offset * (largestBoundingBoxSide / 2.0f) * scale
 				);
+				struct fnCall fn_call;
+				fn_call.fn_offset = displacedOffset;
+				fn_call.fn_scale = smallerScale;
+				fn_call.fn_depth = depthLimit;
+
+				int blockLen[3] {3, 1, 1};
+				MPI_Datatype fn_send_recv;
+				MPI_Datatype type[5] {MPI_FLOAT, MPI_FLOAT, MPI_FLOAT, MPI_FLOAT, MPI_INT};
+				MPI_Aint disp[3];
+				disp[0] = offsetof(fnCall, fn_offset);
+				disp[1] = offsetof(fnCall, fn_scale);
+				disp[2] = offsetof(fnCall, fn_depth);
+
+				MPI_Type_create_struct(3, blockLen, disp, type, &fn_send_recv);
+				MPI_Type_commit(&fn_send_recv);
 
 				renderMeshFractal(meshes, transformedMeshes, width, height, frameBuffer, depthBuffer, largestBoundingBoxSide, depthLimit, smallerScale, displacedOffset);
 			}
