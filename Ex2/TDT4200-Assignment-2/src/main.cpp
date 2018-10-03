@@ -63,12 +63,11 @@ int main(int argc, char **argv) {
 	if(my_rank == 0) {
 		// Loading the mesh object
 		meshs = loadWavefront(input, false);
-
+		// Sending the broadcast
 		for(unsigned int i = 0; i < meshs.size(); ++i) {
 			MPI_Bcast(&meshs[i].vertices[i], meshs[i].vertices.size(), mpi_float4, 0, MPI_COMM_WORLD);
 			MPI_Bcast(&meshs[i].textures[i], meshs[i].textures.size(), mpi_float3, 0, MPI_COMM_WORLD);
 			MPI_Bcast(&meshs[i].normals[i], meshs[i].normals.size(), mpi_float3, 0, MPI_COMM_WORLD);
-
 		}
 	}
 	else {
@@ -93,6 +92,7 @@ int main(int argc, char **argv) {
 				meshs.at(i).normals.at(n).z = 0;
 			}
 		}
+		// Receiving the broadcast
 		for(unsigned int i = 0; i < meshs.size(); ++i) {
 			MPI_Bcast(&meshs[i].vertices[i], meshs[i].vertices.size(), mpi_float4, 0, MPI_COMM_WORLD);
 			MPI_Bcast(&meshs[i].textures[i], meshs[i].textures.size(), mpi_float3, 0, MPI_COMM_WORLD);
